@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Promoter Dashboard</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FF6900', // Xiaomi Orange
+                        secondary: '#6366f1', // Indigo 500
+                        dark: '#0f172a', // Slate 900
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Icons (Phosphor) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- SheetJS (Excel) -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+    <!-- ApexCharts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+    <!-- Custom Store -->
+    <script src="js/store.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body class="bg-slate-50 text-slate-800 font-sans antialiased" x-data>
+
+    <!-- Login View -->
+    <template x-if="$store.app.currentView === 'login'">
+        <div class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-slate-800"
+            x-data="{ username: '', password: '', error: '' }">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+                <div class="p-8">
+                    <div class="text-center mb-8">
+                        <div
+                            class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/2/29/Xiaomi_logo.svg"
+                                class="w-12 h-12">
+                        </div>
+                        <h1 class="text-2xl font-bold text-slate-900">Mi Promoter Dashboard</h1>
+                        <p class="text-slate-500">Distribution Management System</p>
+                    </div>
+
+                    <form
+                        @submit.prevent="if($store.app.login(username, password)) { username=''; password=''; } else { error='Invalid credentials'; }"
+                        class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Username</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2.5 text-slate-400"><i
+                                        class="ph ph-user text-lg"></i></span>
+                                <input type="text" x-model="username"
+                                    class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
+                                    placeholder="Enter username">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2.5 text-slate-400"><i
+                                        class="ph ph-lock text-lg"></i></span>
+                                <input type="password" x-model="password"
+                                    class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
+                                    placeholder="Enter password">
+                            </div>
+                        </div>
+
+                        <div x-show="error" class="text-red-500 text-sm text-center" x-text="error"></div>
+
+                        <button type="submit"
+                            class="w-full bg-primary hover:bg-sky-600 text-white font-semibold py-2.5 rounded-lg transition shadow-lg shadow-primary/30">
+                            Sign In
+                        </button>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Main Layout (App Shell) -->
+    <template x-if="$store.app.currentView !== 'login'">
+        <div class="flex h-screen overflow-hidden bg-slate-50">
+
+            <!-- Sidebar (Desktop) -->
+            <aside class="hidden md:flex flex-col w-64 bg-slate-900 text-white transition-all shadow-xl z-20">
+                <div class="p-6 flex items-center gap-3 border-b border-white/10">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-white">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/2/29/Xiaomi_logo.svg" class="w-6 h-6">
+                    </div>
+                    <span class="text-lg font-bold tracking-tight">Mi Promoter</span>
+                </div>
+
+                <nav class="flex-1 overflow-y-auto p-4 space-y-1">
+                    <!-- Dynamic Nav based on Role -->
+                    <template x-if="$store.app.currentUser.role === 'ADMIN'">
+                        <div>
+                            <p class="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                Administration</p>
+                            <a href="#" @click="$store.app.currentView = 'admin'"
+                                class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition"
+                                :class="$store.app.currentView === 'admin' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'">
+                                <i class="ph ph-squares-four text-lg"></i> Dashboard
+                            </a>
+                            <a href="#" @click="$store.app.currentView = 'logs'"
+                                class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition"
+                                :class="$store.app.currentView === 'logs' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'">
+                                <i class="ph ph-activity text-lg"></i> System Logs
+                            </a>
+                        </div>
+                    </template>
+
+                    <template x-if="$store.app.currentUser.role === 'MANAGER'">
+                        <div>
+                            <p class="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                Management</p>
+                            <a href="#" @click="$store.app.currentView = 'manager'"
+                                class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition"
+                                :class="$store.app.currentView === 'manager' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'">
+                                <i class="ph ph-chart-line-up text-lg"></i> Dashboard
+                            </a>
+                            <a href="#" @click="$store.app.currentView = 'logs'"
+                                class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition"
+                                :class="$store.app.currentView === 'logs' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'">
+                                <i class="ph ph-activity text-lg"></i> System Logs
+                            </a>
+                        </div>
+                    </template>
+
+                    <!-- Shared Logout -->
+                </nav>
+
+                <div class="p-4 border-t border-white/10">
+                    <div class="flex items-center gap-3 mb-4">
+                        <img :src="$store.app.currentUser.avatar"
+                            class="w-10 h-10 rounded-full border-2 border-primary/50">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium truncate" x-text="$store.app.currentUser.name"></p>
+                            <p class="text-xs text-slate-400 truncate" x-text="$store.app.currentUser.role"></p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button @click="$dispatch('open-change-password')"
+                            class="flex flex-col items-center justify-center gap-1 p-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:text-white hover:bg-white/5 border border-white/10 rounded-xl transition">
+                            <i class="ph ph-lock text-lg"></i> Password
+                        </button>
+                        <button @click="$store.app.logout()"
+                            class="flex flex-col items-center justify-center gap-1 p-3 text-[10px] font-bold uppercase tracking-wider text-red-400 hover:text-red-300 hover:bg-red-400/10 border border-red-400/20 rounded-xl transition">
+                            <i class="ph ph-sign-out text-lg"></i> Sign Out
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+                <!-- Top Right Logo (Desktop) -->
+                <div class="hidden md:block absolute top-6 right-8 z-50 opacity-90">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Xiaomi_logo.svg/1024px-Xiaomi_logo.svg.png"
+                        class="w-10 h-10 shadow-sm rounded-lg">
+                </div>
+                <!-- Mobile Header -->
+                <header
+                    class="md:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between z-10 sticky top-0">
+                    <div class="flex items-center gap-2">
+                        <div
+                            class="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-white border border-slate-100">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/2/29/Xiaomi_logo.svg"
+                                class="w-6 h-6">
+                        </div>
+                        <span class="font-bold text-slate-900">Mi Promoter</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button @click="$dispatch('open-change-password')" class="text-slate-500 hover:text-slate-700">
+                            <i class="ph ph-lock text-xl"></i>
+                        </button>
+                        <button @click="$store.app.logout()" class="text-slate-500 hover:text-red-500">
+                            <i class="ph ph-sign-out text-xl"></i>
+                        </button>
+                    </div>
+                </header>
+
+                <main class="flex-1 overflow-auto p-4 md:p-8" id="main-content">
+
+                    <!-- ADMIN DASHBOARD -->
+                    <template x-if="$store.app.currentView === 'admin'">
+                        <div class="space-y-6"
+                            x-data="{ userModalOpen: false, editingUser: null, newUser: { name: '', username: '', password: '', role: 'REP', retailName: '' } }">
+                            <h2 class="text-2xl font-bold text-slate-800">Admin Dashboard</h2>
+
+                            <!-- Stats Grid -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div
+                                    class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+                                    <div>
+                                        <p class="text-slate-500 text-sm font-medium">Total Representatives</p>
+                                        <p class="text-3xl font-bold text-slate-800"
+                                            x-text="($store.app.users.filter(u => u.role === 'REP').length || 0).toLocaleString()">
+                                        </p>
+                                    </div>
+                                    <div
+                                        class="w-12 h-12 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center text-xl">
+                                        <i class="ph-fill ph-users"></i>
+                                    </div>
+                                </div>
+                                <div
+                                    class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+                                    <div>
+                                        <p class="text-slate-500 text-sm font-medium">Targets Assigned</p>
+                                        <p class="text-3xl font-bold text-slate-800"
+                                            x-text="($store.app.targets.length || 0).toLocaleString()"></p>
+                                    </div>
+                                    <div
+                                        class="w-12 h-12 bg-green-50 text-green-500 rounded-xl flex items-center justify-center text-xl">
+                                        <i class="ph-fill ph-target"></i>
+                                    </div>
+                                </div>
+                                <div
+                                    class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+                                    <div>
+                                        <p class="text-slate-500 text-sm font-medium">System Logs</p>
+                                        <p class="text-3xl font-bold text-slate-800"
+                                            x-text="($store.app.logs.length || 0).toLocaleString()"></p>
+                                    </div>
+                                    <div
+                                        class="w-12 h-12 bg-purple-50 text-purple-500 rounded-xl flex items-center justify-center text-xl">
+                                        <i class="ph-fill ph-activity"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <!-- User Management -->
+                                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                                    <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                                        <h3 class="font-bold text-slate-800">User Management</h3>
+                                        <button
+                                            @click="userModalOpen = true; editingUser = null; newUser = { name: '', username: '', password: '', role: 'REP', retailName: '' }"
+                                            class="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-slate-800 transition flex items-center gap-2">
+                                            <i class="ph-bold ph-plus"></i> Add User
+                                        </button>
+                                    </div>
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-sm text-left">
+                                            <thead class="bg-slate-50 text-slate-500 font-medium">
+                                                <tr>
+                                                    <th class="px-6 py-3">Name</th>
+                                                    <th class="px-6 py-3">Role</th>
+                                                    <th class="px-6 py-3">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100">
+                                                <template x-for="user in $store.app.users" :key="user.id">
+                                                    <tr class="hover:bg-slate-50/50">
+                                                        <td class="px-6 py-3">
+                                                            <div class="flex items-center gap-3">
+                                                                <img :src="user.avatar" class="w-8 h-8 rounded-full">
+                                                                <div>
+                                                                    <div class="font-medium text-slate-800"
+                                                                        x-text="user.name"></div>
+                                                                    <div class="text-xs text-slate-400"
+                                                                        x-text="user.username"></div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td class="px-6 py-3">
+                                                            <span class="px-2 py-1 rounded text-xs font-medium" :class="{
+                                                                    'bg-purple-100 text-purple-700': user.role === 'ADMIN',
+                                                                    'bg-blue-100 text-blue-700': user.role === 'MANAGER',
+                                                                    'bg-slate-100 text-slate-700': user.role === 'REP'
+                                                                }" x-text="user.role"></span>
+                                                        </td>
+                                                        <td class="px-6 py-3">
+                                                            <div class="flex gap-2">
+                                                                <button
+                                                                    @click="userModalOpen = true; editingUser = user; newUser = { ...user }"
+                                                                    class="text-blue-500 hover:text-blue-600"><i
+                                                                        class="ph-bold ph-pencil-simple"></i></button>
+                                                                <button
+                                                                    @click="if(confirm('Delete user?')) $store.app.deleteUser(user.id)"
+                                                                    class="text-red-500 hover:text-red-600"
+                                                                    x-show="user.id !== $store.app.currentUser.id"><i
+                                                                        class="ph-bold ph-trash"></i></button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Online Data Management -->
+                                <div class="bg-white rounded-xl shadow-sm border border-slate-100 h-fit">
+                                    <div class="p-6 border-b border-slate-100">
+                                        <h3 class="font-bold text-slate-800">Data Management</h3>
+                                    </div>
+                                    <div class="p-6 space-y-6">
+
+                                        <!-- Step 1: Online Excel -->
+                                        <div class="bg-green-50 rounded-xl p-6 border border-green-100">
+                                            <div class="flex items-center gap-4 mb-4">
+                                                <div
+                                                    class="w-12 h-12 bg-white text-green-600 rounded-full flex items-center justify-center shadow-sm">
+                                                    <i class="ph-fill ph-microsoft-excel-logo text-2xl"></i>
+                                                </div>
+                                                <div>
+                                                    <h4 class="font-bold text-slate-800">1. Update Online Data</h4>
+                                                    <p class="text-sm text-slate-600">Edit the master data sheet online
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <a href="https://gnextcomlk-my.sharepoint.com/personal/ruwan_k_gnext_com_lk/Documents/Documents/Reports/Mi%20Buddy%20and%20Promoter/Onine%20dashboard%20update/Online%20dashboard%20update.xlsx"
+                                                target="_blank"
+                                                class="block w-full text-center py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition shadow-sm">
+                                                Open Online Excel <i class="ph-bold ph-arrow-square-out ml-2"></i>
+                                            </a>
+                                        </div>
+
+                                        <!-- Step 2: Import -->
+                                        <div
+                                            class="rounded-xl p-6 border-2 border-dashed border-slate-200 hover:border-primary/50 transition relative group bg-slate-50/50">
+                                            <input type="file"
+                                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                accept=".xlsx, .xls" @change="
+                                                    const file = $event.target.files[0];
+                                                    if(file) {
+                                                        const reader = new FileReader();
+                                                        reader.onload = (e) => {
+                                                            try {
+                                                                const data = new Uint8Array(e.target.result);
+                                                                const workbook = XLSX.read(data, {type: 'array'});
+                                                                
+                                                                const qtySheet = workbook.Sheets['Targets Qty'];
+                                                                if(!qtySheet) throw new Error('Sheet Targets Qty not found');
+                                                                const targetsQty = XLSX.utils.sheet_to_json(qtySheet);
+
+                                                                const valSheet = workbook.Sheets['Targets Value'];
+                                                                if(!valSheet) throw new Error('Sheet Targets Value not found');
+                                                                const targetsValue = XLSX.utils.sheet_to_json(valSheet);
+
+                                                                $store.app.processMasterUpload(targetsQty, targetsValue);
+                                                                alert('Dashboard updated successfully!');
+                                                            } catch(err) {
+                                                                alert('Error: ' + err.message);
+                                                            }
+                                                        };
+                                                        reader.readAsArrayBuffer(file);
+                                                    }
+                                                ">
+                                            <div
+                                                class="flex flex-col items-center justify-center text-center space-y-2 pointer-events-none">
+                                                <h4 class="font-bold text-slate-800">2. Sync Dashboard</h4>
+                                                <p class="text-sm text-slate-500">Download the file and upload here to
+                                                    sync</p>
+                                                <div
+                                                    class="mt-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-600 shadow-sm group-hover:text-primary group-hover:border-primary transition">
+                                                    <i class="ph-bold ph-upload-simple mr-2"></i> Import File
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <!-- User Modal -->
+                            <div x-show="userModalOpen"
+                                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+                                x-cloak>
+                                <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden"
+                                    @click.outside="userModalOpen = false">
+                                    <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                                        <h3 class="font-bold text-lg"
+                                            x-text="editingUser ? 'Edit User' : 'Add New User'">
+                                        </h3>
+                                        <button @click="userModalOpen = false"><i class="ph ph-x text-xl"></i></button>
+                                    </div>
+                                    <div class="p-6 space-y-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 mb-1">Full
+                                                Name</label>
+                                            <input type="text" x-model="newUser.name"
+                                                class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-primary/50">
+                                        </div>
+                                        <div>
+                                            <label
+                                                class="block text-sm font-medium text-slate-700 mb-1">Username</label>
+                                            <input type="text" x-model="newUser.username"
+                                                class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-primary/50">
+                                        </div>
+                                        <div>
+                                            <label
+                                                class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                                            <input type="text" x-model="newUser.password"
+                                                class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-primary/50">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                                            <select x-model="newUser.role"
+                                                class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-primary/50">
+                                                <option value="ADMIN">Admin</option>
+                                                <option value="MANAGER">Manager</option>
+                                                <option value="REP">Representative</option>
+                                            </select>
+                                        </div>
+                                        <div x-show="newUser.role === 'REP'">
+                                            <label class="block text-sm font-medium text-slate-700 mb-1">Retail
+                                                Name</label>
+                                            <input type="text" x-model="newUser.retailName"
+                                                class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-primary/50">
+                                        </div>
+                                    </div>
+                                    <div class="p-4 bg-slate-50 flex justify-end gap-2">
+                                        <button @click="userModalOpen = false"
+                                            class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800">Cancel</button>
+                                        <button @click="
+                                            if (editingUser) $store.app.updateUser(newUser);
+                                            else $store.app.addUser(newUser);
+                                            userModalOpen = false;
+                                        "
+                                            class="px-4 py-2 text-sm font-medium text-white bg-slate-900 rounded-lg hover:bg-slate-800">Save
+                                            User</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+
+                    <!-- LOGS VIEW -->
+                    <template x-if="$store.app.currentView === 'logs'">
+                        <div class="space-y-6">
+                            <div class="flex items-center justify-between">
+                                <h2 class="text-2xl font-bold text-slate-800">System Logs</h2>
+                                <button
+                                    @click="$store.app.currentView = ($store.app.currentUser.role === 'ADMIN' ? 'admin' : 'manager')"
+                                    class="text-sm font-medium text-primary hover:underline flex items-center gap-1">
+                                    <i class="ph ph-arrow-left"></i> Back to Dashboard
+                                </button>
+                            </div>
+
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="bg-slate-50 text-slate-500 font-medium border-b border-slate-100">
+                                        <tr>
+                                            <th class="px-6 py-4">User Name</th>
+                                            <th class="px-6 py-4">Last Activity</th>
+                                            <th class="px-6 py-4">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        <template x-for="user in $store.app.users" :key="user.id">
+                                            <tr class="hover:bg-slate-50/50">
+                                                <td class="px-6 py-4">
+                                                    <div class="flex items-center gap-3">
+                                                        <img :src="user.avatar" class="w-8 h-8 rounded-full">
+                                                        <div>
+                                                            <div class="font-semibold text-slate-800"
+                                                                x-text="user.name"></div>
+                                                            <div class="text-xs text-slate-400" x-text="user.role">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="px-6 py-4">
+                                                    <template x-if="$store.app.logs.find(l => l.userId === user.id)">
+                                                        <span class="text-slate-600"
+                                                            x-text="new Date($store.app.logs.find(l => l.userId === user.id).timestamp).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })"></span>
+                                                    </template>
+                                                    <template x-if="!$store.app.logs.find(l => l.userId === user.id)">
+                                                        <span class="text-slate-400 italic">No activity recorded</span>
+                                                    </template>
+                                                </td>
+                                                <td class="px-6 py-4">
+                                                    <span
+                                                        class="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                                                        :class="($store.app.logs.find(l => l.userId === user.id) && (Date.now() - new Date($store.app.logs.find(l => l.userId === user.id).timestamp).getTime()) < 3600000) ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'">
+                                                        <span
+                                                            x-text="($store.app.logs.find(l => l.userId === user.id) && (Date.now() - new Date($store.app.logs.find(l => l.userId === user.id).timestamp).getTime()) < 3600000) ? 'Active' : 'Offline'"></span>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="$store.app.currentView === 'manager'">
+                        <div class="space-y-6" x-data="{
+                            selectedMonth: new Date().getMonth() + 1,
+                            selectedYear: new Date().getFullYear(),
+                            selectedRep: null,
+
+                            get months() {
+                                return Array.from({length: 12}, (_, i) => ({
+                                    value: i + 1,
+                                    label: new Date(2026, i).toLocaleString('default', { month: 'long' })
+                                }));
+                            },
+                            get years() {
+                                const y = new Date().getFullYear();
+                                return [y - 1, y, y + 1];
+                            },
+                            get reps() {
+                                return $store.app.users.filter(u => u.role === 'REP');
+                            },
+                            get allData() {
+                                return $store.app.targets.filter(t => t.Month == this.selectedMonth && t.Year == this.selectedYear);
+                            },
+                            get allValueData() {
+                                return $store.app.value_targets.filter(v => v.Month == this.selectedMonth && v.Year == this.selectedYear);
+                            },
+                            get totalQtyTarget() { return this.allData.reduce((a, t) => a + (parseInt(t.Target) || 0), 0); },
+                            get totalQtyAchieved() { return this.allData.reduce((a, t) => a + (parseInt(t.Achievement) || 0), 0); },
+                            get totalValTarget() { return this.allValueData.reduce((a, v) => a + (parseFloat(v.ValueTarget) || 0), 0); },
+                            get totalValAchieved() { return this.allValueData.reduce((a, v) => a + (parseFloat(v.ValueAchievement) || 0), 0); },
+
+                            get repSummary() {
+                                return this.reps.map(rep => {
+                                    const repTargets = this.allData.filter(t => t.RepName === rep.name);
+                                    const repValues = this.allValueData.filter(v => v.RepName === rep.name);
+                                    const qtyTarget = repTargets.reduce((a, t) => a + (parseInt(t.Target) || 0), 0);
+                                    const qtyAchieved = repTargets.reduce((a, t) => a + (parseInt(t.Achievement) || 0), 0);
+                                    const valTarget = repValues.reduce((a, v) => a + (parseFloat(v.ValueTarget) || 0), 0);
+                                    const valAchieved = repValues.reduce((a, v) => a + (parseFloat(v.ValueAchievement) || 0), 0);
+                                    return {
+                                        ...rep,
+                                        qtyTarget, qtyAchieved,
+                                        qtyPercent: qtyTarget > 0 ? Math.round((qtyAchieved / qtyTarget) * 100) : 0,
+                                        valTarget, valAchieved,
+                                        valPercent: valTarget > 0 ? Math.round((valAchieved / valTarget) * 100) : 0,
+                                        models: repTargets
+                                    };
+                                });
+                            },
+
+                            init() {
+                                // Default to current month/year
+                                this.selectedMonth = new Date().getMonth() + 1;
+                                this.selectedYear = new Date().getFullYear();
+
+                                this.$watch('selectedMonth', () => this.renderCharts());
+                                this.$watch('selectedYear', () => this.renderCharts());
+                                this.$watch('$store.app.targets', () => this.renderCharts());
+                                setTimeout(() => this.renderCharts(), 150);
+                            },
+
+                            downloadExcel() {
+                                const rawData = this.allData.map(row => ({
+                                    'Rep Name': row.RepName,
+                                    'Retail Name': row.RetailName,
+                                    'Model': row.Model,
+                                    'Target': row.Target,
+                                    'Achievement': row.Achievement,
+                                    'Achievement %': row.Target > 0 ? Math.round((row.Achievement / row.Target) * 100) + '%' : '0%',
+                                    'Month': row.Month,
+                                    'Year': row.Year
+                                }));
+                                const worksheet = XLSX.utils.json_to_sheet(rawData);
+                                const workbook = XLSX.utils.book_new();
+                                XLSX.utils.book_append_sheet(workbook, worksheet, 'Raw Data');
+                                XLSX.writeFile(workbook, `Mi_Dashboard_Raw_Data_${this.selectedMonth}_${this.selectedYear}.xlsx`);
+                            },
+
+                            renderCharts() {
+                                this.$nextTick(() => {
+                                    const qtyEl = document.querySelector('#mgr-qty-chart');
+                                    if (qtyEl) {
+                                        qtyEl.innerHTML = '';
+                                        new ApexCharts(qtyEl, {
+                                            series: [{ name: 'Target', data: [this.totalQtyTarget] }, { name: 'Achieved', data: [this.totalQtyAchieved] }],
+                                            chart: { type: 'bar', height: 280, toolbar: { show: false } },
+                                            plotOptions: { bar: { horizontal: false, columnWidth: '50%', borderRadius: 6 } },
+                                            dataLabels: { enabled: true, style: { fontSize: '13px', fontWeight: 'bold' } },
+                                            xaxis: { categories: ['Total Quantity'] },
+                                            fill: { opacity: 1 },
+                                            colors: ['#334155', '#22c55e'],
+                                            legend: { position: 'top' }
+                                        }).render();
+                                    }
+                                    const valEl = document.querySelector('#mgr-val-chart');
+                                    if (valEl) {
+                                        valEl.innerHTML = '';
+                                        new ApexCharts(valEl, {
+                                            series: [{ name: 'Target', data: [this.totalValTarget] }, { name: 'Achieved', data: [this.totalValAchieved] }],
+                                            chart: { type: 'bar', height: 280, toolbar: { show: false } },
+                                            plotOptions: { bar: { horizontal: false, columnWidth: '50%', borderRadius: 6 } },
+                                            dataLabels: {
+                                                enabled: true, style: { fontSize: '13px', fontWeight: 'bold' },
+                                                formatter: function (val) { return val >= 1000 ? (val / 1000).toFixed(0) + 'K' : val; }
+                                            },
+                                            xaxis: { categories: ['Total Value'] },
+                                            fill: { opacity: 1 },
+                                            colors: ['#334155', '#f97316'],
+                                            legend: { position: 'top' }
+                                        }).render();
+                                    }
+                                });
+                            }
+                        }">
+
+                            <!-- Month Header & Sync Info -->
+                            <div
+                                class="bg-gradient-to-r from-primary/10 to-orange-50 p-5 rounded-2xl border border-primary/20">
+                                <div class="flex items-center justify-between flex-wrap gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-12 h-12 bg-primary text-white rounded-xl flex items-center justify-center shadow-md">
+                                            <i class="ph-fill ph-calendar-blank text-2xl"></i>
+                                        </div>
+                                        <div>
+                                            <h2 class="text-xl font-bold text-slate-800"
+                                                x-text="months.find(m => m.value == selectedMonth)?.label + ' ' + selectedYear">
+                                            </h2>
+                                            <p class="text-xs text-slate-500">Manager Overview</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <select x-model="selectedMonth"
+                                            class="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-primary/30 outline-none">
+                                            <template x-for="m in months" :key="m.value">
+                                                <option :value="m.value" x-text="m.label"></option>
+                                            </template>
+                                        </select>
+                                        <select x-model="selectedYear"
+                                            class="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-primary/30 outline-none">
+                                            <template x-for="y in years" :key="y">
+                                                <option :value="y" x-text="y"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </div>
+                                <template x-if="$store.app.lastSyncDate">
+                                    <p class="text-xs text-green-600 mt-3 flex items-center gap-1">
+                                        <i class="ph-fill ph-check-circle"></i> Last Synced:
+                                        <span
+                                            x-text="new Date($store.app.lastSyncDate).toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) + ' ' + new Date($store.app.lastSyncDate).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'})"></span>
+                                    </p>
+                                </template>
+                            </div>
+
+                            <!-- Summary Stats -->
+                            <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-4">
+                                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center">
+                                    <p class="text-xs text-slate-500 mb-1">Team Size</p>
+                                    <p class="text-2xl font-bold text-slate-800" x-text="reps.length"></p>
+                                </div>
+                                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center">
+                                    <p class="text-xs text-slate-500 mb-1">Qty Target</p>
+                                    <p class="text-2xl font-bold text-slate-800"
+                                        x-text="totalQtyTarget.toLocaleString()"></p>
+                                </div>
+                                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center">
+                                    <p class="text-xs text-slate-500 mb-1">Qty Achieved</p>
+                                    <p class="text-2xl font-bold text-green-600"
+                                        x-text="totalQtyAchieved.toLocaleString()"></p>
+                                </div>
+                                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center">
+                                    <p class="text-xs text-slate-500 mb-1">Qty %</p>
+                                    <p class="text-2xl font-bold"
+                                        :class="totalQtyTarget > 0 && Math.round((totalQtyAchieved/totalQtyTarget)*100) >= 80 ? 'text-green-600' : 'text-amber-500'"
+                                        x-text="totalQtyTarget > 0 ? Math.round((totalQtyAchieved/totalQtyTarget)*100) + '%' : '0%'">
+                                    </p>
+                                </div>
+                                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center">
+                                    <p class="text-xs text-slate-500 mb-1">Value Target</p>
+                                    <p class="text-2xl font-bold text-slate-800"
+                                        x-text="totalValTarget.toLocaleString()"></p>
+                                </div>
+                                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center">
+                                    <p class="text-xs text-slate-500 mb-1">Value Achieved</p>
+                                    <p class="text-2xl font-bold text-orange-500"
+                                        x-text="totalValAchieved.toLocaleString()"></p>
+                                </div>
+                                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center">
+                                    <p class="text-xs text-slate-500 mb-1">Value %</p>
+                                    <p class="text-2xl font-bold"
+                                        :class="totalValTarget > 0 && Math.round((totalValAchieved/totalValTarget)*100) >= 80 ? 'text-green-600' : 'text-amber-500'"
+                                        x-text="totalValTarget > 0 ? Math.round((totalValAchieved/totalValTarget)*100) + '%' : '0%'">
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Two Big Charts -->
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                                    <h3 class="font-bold text-slate-800 mb-2"><i
+                                            class="ph-fill ph-cube text-primary mr-1"></i> Quantity: Target vs
+                                        Achievement</h3>
+                                    <div id="mgr-qty-chart"></div>
+                                </div>
+                                <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                                    <h3 class="font-bold text-slate-800 mb-2"><i
+                                            class="ph-fill ph-currency-circle-dollar text-primary mr-1"></i> Value:
+                                        Target vs Achievement</h3>
+                                    <div id="mgr-val-chart"></div>
+                                </div>
+                            </div>
+
+                            <!-- Rep Performance Cards -->
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                                <div class="p-6 border-b border-slate-100">
+                                    <h3 class="font-bold text-slate-800"><i
+                                            class="ph-fill ph-users-three mr-1 text-primary"></i> Individual Rep
+                                        Performance</h3>
+                                </div>
+                                <div class="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                    <template x-for="rep in repSummary" :key="rep.id">
+                                        <div class="border border-slate-100 rounded-xl p-4 hover:shadow-md transition cursor-pointer"
+                                            @click="selectedRep = selectedRep?.id === rep.id ? null : rep">
+                                            <div class="flex items-center gap-3 mb-3">
+                                                <img :src="rep.avatar"
+                                                    class="w-10 h-10 rounded-full border-2 border-white shadow">
+                                                <div class="flex-1 min-w-0">
+                                                    <p class="font-bold text-slate-800 truncate" x-text="rep.name"></p>
+                                                    <p class="text-xs text-slate-500 truncate"
+                                                        x-text="rep.retailName || '-'"></p>
+                                                </div>
+                                                <div class="text-right">
+                                                    <p class="text-lg font-bold"
+                                                        :class="rep.qtyPercent >= 80 ? 'text-green-600' : rep.qtyPercent >= 50 ? 'text-amber-500' : 'text-red-500'"
+                                                        x-text="rep.qtyPercent + '%'"></p>
+                                                    <p class="text-[10px] text-slate-400">QTY</p>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <div class="flex justify-between text-xs text-slate-500 mb-1">
+                                                    <span>Qty</span>
+                                                    <span
+                                                        x-text="rep.qtyAchieved.toLocaleString() + ' / ' + rep.qtyTarget.toLocaleString()"></span>
+                                                </div>
+                                                <div class="w-full bg-slate-100 rounded-full h-2">
+                                                    <div class="h-2 rounded-full transition-all duration-500"
+                                                        :class="rep.qtyPercent >= 80 ? 'bg-green-500' : rep.qtyPercent >= 50 ? 'bg-amber-500' : 'bg-red-500'"
+                                                        :style="'width: ' + Math.min(rep.qtyPercent, 100) + '%'"></div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="flex justify-between text-xs text-slate-500 mb-1">
+                                                    <span>Value</span>
+                                                    <span
+                                                        x-text="rep.valAchieved.toLocaleString() + ' / ' + rep.valTarget.toLocaleString()"></span>
+                                                </div>
+                                                <div class="w-full bg-slate-100 rounded-full h-2">
+                                                    <div class="h-2 rounded-full bg-orange-500 transition-all duration-500"
+                                                        :style="'width: ' + Math.min(rep.valPercent, 100) + '%'"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- Selected Rep Detail -->
+                            <template x-if="selectedRep">
+                                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                                    <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <img :src="selectedRep.avatar" class="w-10 h-10 rounded-full">
+                                            <div>
+                                                <h3 class="font-bold text-slate-800"
+                                                    x-text="selectedRep.name + ' — Model Details'"></h3>
+                                                <p class="text-xs text-slate-500" x-text="selectedRep.retailName"></p>
+                                            </div>
+                                        </div>
+                                        <button @click="selectedRep = null"
+                                            class="text-slate-400 hover:text-slate-600"><i
+                                                class="ph ph-x text-xl"></i></button>
+                                    </div>
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-sm text-left">
+                                            <thead class="bg-slate-50 text-slate-500 font-medium">
+                                                <tr>
+                                                    <th class="px-6 py-3">Model</th>
+                                                    <th class="px-6 py-3 text-right">Target</th>
+                                                    <th class="px-6 py-3 text-right">Achieved</th>
+                                                    <th class="px-6 py-3 text-right">%</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100">
+                                                <template x-for="m in selectedRep.models" :key="m.Model">
+                                                    <tr class="hover:bg-slate-50/50">
+                                                        <td class="px-6 py-3 font-medium text-slate-800"
+                                                            x-text="m.Model"></td>
+                                                        <td class="px-6 py-3 text-right"
+                                                            x-text="m.Target.toLocaleString()"></td>
+                                                        <td class="px-6 py-3 text-right font-semibold"
+                                                            :class="parseInt(m.Achievement) >= parseInt(m.Target) ? 'text-green-600' : 'text-slate-800'"
+                                                            x-text="m.Achievement.toLocaleString()"></td>
+                                                        <td class="px-6 py-3 text-right">
+                                                            <span class="px-2 py-1 rounded text-xs font-bold"
+                                                                :class="parseInt(m.Target) > 0 && Math.round((parseInt(m.Achievement)/parseInt(m.Target))*100) >= 80 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'"
+                                                                x-text="parseInt(m.Target) > 0 ? Math.round((parseInt(m.Achievement)/parseInt(m.Target))*100) + '%' : '0%'"></span>
+                                                        </td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- All Data Table -->
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                                <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                                    <h3 class="font-bold text-slate-800"><i
+                                            class="ph-fill ph-table mr-1 text-primary"></i> All Data — <span
+                                            x-text="months.find(m => m.value == selectedMonth)?.label + ' ' + selectedYear"></span>
+                                    </h3>
+                                    <button @click="downloadExcel()"
+                                        class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 transition shadow-sm">
+                                        <i class="ph-bold ph-file-xls text-lg"></i> Download Data
+                                    </button>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-sm text-left">
+                                        <thead class="bg-slate-50 text-slate-500 font-medium">
+                                            <tr>
+                                                <th class="px-4 py-3">Rep</th>
+                                                <th class="px-4 py-3">Retail</th>
+                                                <th class="px-4 py-3">Model</th>
+                                                <th class="px-4 py-3 text-right">Target</th>
+                                                <th class="px-4 py-3 text-right">Achieved</th>
+                                                <th class="px-4 py-3 text-right">%</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100">
+                                            <template x-for="(row, idx) in allData" :key="idx">
+                                                <tr class="hover:bg-slate-50/50">
+                                                    <td class="px-4 py-3 font-medium text-slate-800"
+                                                        x-text="row.RepName"></td>
+                                                    <td class="px-4 py-3 text-slate-500" x-text="row.RetailName || '-'">
+                                                    </td>
+                                                    <td class="px-4 py-3 text-slate-700" x-text="row.Model"></td>
+                                                    <td class="px-4 py-3 text-right"
+                                                        x-text="row.Target.toLocaleString()"></td>
+                                                    <td class="px-4 py-3 text-right font-semibold"
+                                                        :class="parseInt(row.Achievement) >= parseInt(row.Target) ? 'text-green-600' : 'text-slate-800'"
+                                                        x-text="row.Achievement.toLocaleString()"></td>
+                                                    <td class="px-4 py-3 text-right">
+                                                        <span class="px-2 py-0.5 rounded text-xs font-bold"
+                                                            :class="parseInt(row.Target) > 0 && Math.round((parseInt(row.Achievement)/parseInt(row.Target))*100) >= 80 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'"
+                                                            x-text="parseInt(row.Target) > 0 ? Math.round((parseInt(row.Achievement)/parseInt(row.Target))*100) + '%' : '0%'"></span>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                            <template x-if="allData.length === 0">
+                                                <tr>
+                                                    <td colspan="6" class="px-4 py-8 text-center text-slate-400">
+                                                        <i class="ph ph-database text-3xl mb-2"></i>
+                                                        <p>No data for this month</p>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                        </div>
+                    </template>
+
+
+
+
+
+
+
+
+                    <!-- REP DASHBOARD -->
+                    <template x-if="$store.app.currentView === 'rep'">
+                        <div class="space-y-6 max-w-lg mx-auto md:max-w-none" x-data="{ 
+                            stockModalOpen: false, 
+                            selectedMonth: new Date().getMonth() + 1,
+                            selectedYear: new Date().getFullYear(),
+                            overallChart: null,
+                            modelCharts: {},
+
+                            get data() {
+                                return $store.app.getRepPerformance($store.app.currentUser.id, this.selectedMonth, this.selectedYear);
+                            },
+
+                            get currentStats() {
+                                const qtyData = this.data.quantity;
+                                const valData = this.data.value;
+
+                                const totalTarget = qtyData.reduce((acc, t) => acc + (parseInt(t.Target) || 0), 0);
+                                const totalAchieved = qtyData.reduce((acc, t) => acc + (parseInt(t.Achievement) || 0), 0);
+                                
+                                const totalValueTarget = valData ? valData.target : 0;
+                                const totalValueAchieved = valData ? valData.achieved : 0;
+                                
+                                const percent = totalTarget > 0 ? Math.round((totalAchieved / totalTarget) * 100) : 0;
+                                return { totalTarget, totalAchieved, percent, totalValueTarget, totalValueAchieved };
+                            },
+
+                            get modelStats() {
+                                const stats = {};
+                                this.data.quantity.forEach(t => {
+                                    if(!stats[t.Model]) stats[t.Model] = { target: 0, achieved: 0 };
+                                    stats[t.Model].target += parseInt(t.Target) || 0;
+                                    stats[t.Model].achieved += parseInt(t.Achievement) || 0;
+                                });
+                                return Object.keys(stats).map(model => {
+                                    const stockEntry = $store.app.stocks.find(s => s.repId === $store.app.currentUser.id && s.model === model);
+                                    return {
+                                        name: model,
+                                        target: stats[model].target,
+                                        achieved: stats[model].achieved,
+                                        stock: stockEntry ? stockEntry.quantity : 0,
+                                        percent: stats[model].target > 0 ? Math.round((stats[model].achieved / stats[model].target) * 100) : 0
+                                    };
+                                });
+                            },
+
+                            get uniqueModels() {
+                                const allRepTargets = $store.app.targets.filter(t => t.RepName === $store.app.currentUser.name);
+                                const models = [...new Set(allRepTargets.map(t => t.Model))];
+                                return models.sort();
+                            },
+
+                            init() {
+                                this.$watch('selectedMonth', () => this.renderCharts());
+                                this.$watch('selectedYear', () => this.renderCharts());
+                                this.$watch('$store.app.targets', () => this.renderCharts());
+                                this.$watch('$store.app.value_targets', () => this.renderCharts());
+                                // Small delay to ensure DOM is ready
+                                setTimeout(() => this.renderCharts(), 100);
+                            },
+
+                            renderCharts() {
+                                // 1. Render Overall Chart
+                                this.renderRadialChart('#rep-chart-overall', this.currentStats.percent, 250, 'Overall');
+
+                                // 2. Render Value Chart
+                                this.renderBarChart('#rep-chart-value', this.currentStats.totalValueTarget, this.currentStats.totalValueAchieved);
+
+                                // 3. Render Model Charts
+                                this.$nextTick(() => {
+                                    this.modelStats.forEach(stat => {
+                                        const id = '#chart-' + stat.name.replace(/[^a-z0-9]/gi, '-');
+                                        this.renderRadialChart(id, stat.percent, 140, stat.name);
+                                    });
+                                });
+                            },
+
+                            renderBarChart(selector, target, achieved) {
+                                const options = {
+                                    series: [
+                                        { name: 'Target', data: [target] },
+                                        { name: 'Achieved', data: [achieved] }
+                                    ],
+                                    chart: { type: 'bar', height: 250, toolbar: { show: false } },
+                                    plotOptions: { bar: { horizontal: false, columnWidth: '55%', endingShape: 'rounded' } },
+                                    dataLabels: { enabled: false },
+                                    stroke: { show: true, width: 2, colors: ['transparent'] },
+                                    xaxis: { categories: ['Total Value'] },
+                                    fill: { opacity: 1 },
+                                    colors: ['#0f172a', '#22c55e']
+                                };
+                                const el = document.querySelector(selector);
+                                if(el) {
+                                    el.innerHTML = '';
+                                    new ApexCharts(el, options).render();
+                                }
+                            },
+
+                            renderRadialChart(selector, percent, size, label) {
+                                const options = {
+                                    series: [percent],
+                                    chart: { height: size, type: 'radialBar' },
+                                    plotOptions: {
+                                        radialBar: {
+                                            hollow: { size: '50%' }, // Thicker chart
+                                            dataLabels: {
+                                                name: { show: false },
+                                                value: { fontSize: size > 200 ? '24px' : '14px', fontWeight: 'bold', formatter: (val) => val + '%' }
+                                            }
+                                        }
+                                    },
+                                    colors: ['#0ea5e9'],
+                                    stroke: { lineCap: 'round' }
+                                };
+
+                                const el = document.querySelector(selector);
+                                if(el) {
+                                    el.innerHTML = ''; // Clear previous
+                                    new ApexCharts(el, options).render();
+                                }
+                            }
+                        }">
+
+                            <!-- Current Month & Sync Info -->
+                            <div
+                                class="bg-gradient-to-r from-primary/10 to-orange-50 p-5 rounded-2xl border border-primary/20">
+                                <div class="flex items-center justify-between flex-wrap gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-12 h-12 bg-primary text-white rounded-xl flex items-center justify-center shadow-md">
+                                            <i class="ph-fill ph-calendar-blank text-2xl"></i>
+                                        </div>
+                                        <div>
+                                            <h2 class="text-xl font-bold text-slate-800"
+                                                x-text="new Date(selectedYear, selectedMonth - 1).toLocaleString('default', { month: 'long' }) + ' ' + selectedYear">
+                                            </h2>
+                                            <p class="text-xs text-slate-500">Current Performance Period</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <template x-if="$store.app.lastSyncDate">
+                                            <div>
+                                                <p class="text-xs text-slate-400">Last Synced</p>
+                                                <p
+                                                    class="text-sm font-semibold text-green-600 flex items-center gap-1 justify-end">
+                                                    <i class="ph-fill ph-check-circle"></i>
+                                                    <span
+                                                        x-text="new Date($store.app.lastSyncDate).toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) + ' ' + new Date($store.app.lastSyncDate).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'})"></span>
+                                                </p>
+                                            </div>
+                                        </template>
+                                        <template x-if="!$store.app.lastSyncDate">
+                                            <p class="text-xs text-amber-500 font-medium flex items-center gap-1"><i
+                                                    class="ph-fill ph-warning"></i> Not synced yet</p>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Profile Header -->
+                            <div
+                                class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                                <div class="relative group cursor-pointer">
+                                    <img :src="$store.app.currentUser.avatar"
+                                        class="w-16 h-16 rounded-full border-2 border-white shadow-md object-cover">
+                                    <label
+                                        class="absolute bottom-0 right-0 bg-slate-900 text-white p-1 rounded-full text-xs shadow-md hover:bg-slate-700 transition cursor-pointer">
+                                        <i class="ph-bold ph-camera"></i>
+                                        <input type="file" class="hidden" accept="image/*" @change="
+                                            const file = $event.target.files[0];
+                                            if (file) {
+                                                const reader = new FileReader();
+                                                reader.onload = (e) => {
+                                                    $store.app.updateAvatar(e.target.result);
+                                                };
+                                                reader.readAsDataURL(file);
+                                            }
+                                        ">
+                                    </label>
+                                </div>
+                                <div>
+                                    <h2 class="text-xl font-bold text-slate-800"
+                                        x-text="'Hello, ' + $store.app.currentUser.name.split(' ')[0]"></h2>
+                                    <p class="text-slate-500 text-sm"
+                                        x-text="$store.app.currentUser.retailName || 'Unknown Retail'">
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Overall Performance Card -->
+                            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="font-semibold text-slate-800">Overall Performance</h3>
+                                    <div class="flex gap-2">
+                                        <select x-model="selectedMonth"
+                                            class="text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 outline-none">
+                                            <template x-for="m in 12">
+                                                <option :value="m"
+                                                    x-text="new Date(0, m-1).toLocaleString('default', {month: 'short'})"
+                                                    :selected="m === selectedMonth"></option>
+                                            </template>
+                                        </select>
+                                        <select x-model="selectedYear"
+                                            class="text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 outline-none">
+                                            <template x-for="y in [2024, 2025, 2026, 2027]">
+                                                <option :value="y" x-text="y" :selected="y === selectedYear"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <!-- Radial Overall -->
+                                    <div class="relative">
+                                        <div id="rep-chart-overall" class="flex justify-center"></div>
+                                        <div class="text-center mt-[-10px]">
+                                            <p class="text-xs text-slate-500">Unit Target: <span
+                                                    class="font-bold text-slate-800"
+                                                    x-text="currentStats.totalTarget.toLocaleString()"></span></p>
+                                            <p class="text-xs text-slate-500">Unit Achieved: <span
+                                                    class="font-bold text-green-500"
+                                                    x-text="currentStats.totalAchieved.toLocaleString()"></span></p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Value Bar Chart -->
+                                    <div class="relative flex flex-col justify-center">
+                                        <div id="rep-chart-value" class="w-full"></div>
+                                        <div class="text-center mt-2">
+                                            <p class="text-xs text-slate-500">Value Target: <span
+                                                    class="font-bold text-slate-800"
+                                                    x-text="currentStats.totalValueTarget.toLocaleString()"></span></p>
+                                            <p class="text-xs text-slate-500">Value Achieved: <span
+                                                    class="font-bold text-green-500"
+                                                    x-text="currentStats.totalValueAchieved.toLocaleString()"></span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Model-wise Performance Grid -->
+                            <div class="grid grid-cols-2 lg:grid-cols-3 gap-6">
+                                <template x-for="model in modelStats" :key="model.name">
+                                    <div
+                                        class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
+                                        <h4 class="text-sm font-semibold text-slate-700 mb-2 truncate w-full text-center"
+                                            x-text="model.name"></h4>
+                                        <div :id="'chart-' + model.name.replace(/[^a-z0-9]/gi, '-')"
+                                            class="flex justify-center"></div>
+                                        <div class="text-center mt-2 w-full space-y-1">
+                                            <div class="flex justify-between text-xs w-full px-2">
+                                                <span class="text-slate-400">T: <b
+                                                        x-text="model.target.toLocaleString()"></b></span>
+                                                <span class="text-green-500">A: <b
+                                                        x-text="model.achieved.toLocaleString()"></b></span>
+                                            </div>
+                                            <div class="text-xs font-bold text-slate-600 bg-slate-50 py-1 rounded">
+                                                Stock: <span
+                                                    :class="{'text-red-500': model.stock == 0, 'text-blue-500': model.stock > 0}"
+                                                    x-text="model.stock.toLocaleString()"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <button @click="stockModalOpen = true"
+                                    class="bg-primary text-white p-4 rounded-xl shadow-lg shadow-primary/20 flex flex-col items-center justify-center gap-2 active:scale-95 transition">
+                                    <i class="ph-bold ph-package text-2xl"></i>
+                                    <span class="font-medium text-sm">Update Stock</span>
+                                </button>
+                                <button
+                                    class="bg-white text-slate-600 border border-slate-100 p-4 rounded-xl shadow-sm flex flex-col items-center justify-center gap-2 active:bg-slate-50 transition">
+                                    <i class="ph-bold ph-eye text-2xl text-secondary"></i>
+                                    <span class="font-medium text-sm">View Targets</span>
+                                </button>
+                            </div>
+
+                            <!-- Stock Update Modal -->
+                            <div x-show="stockModalOpen"
+                                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+                                x-cloak>
+                                <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden"
+                                    @click.outside="stockModalOpen = false">
+                                    <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                                        <h3 class="font-bold text-lg">Update Stock</h3>
+                                        <button @click="stockModalOpen = false"><i class="ph ph-x text-xl"></i></button>
+                                    </div>
+                                    <div class="p-6 space-y-4" x-data="{ model: '', qty: 0 }">
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 mb-1">Model
+                                                Name</label>
+                                            <select x-model="model"
+                                                class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-primary/50">
+                                                <option value="">Select a Model</option>
+                                                <template x-for="m in uniqueModels" :key="m">
+                                                    <option :value="m" x-text="m"></option>
+                                                </template>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 mb-1">Available
+                                                Quantity</label>
+                                            <input type="number" x-model="qty"
+                                                class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-primary/50">
+                                            <p class="text-xs text-red-500 mt-1" x-show="qty == 0 && model">Alert: Out
+                                                of Stock!</p>
+                                        </div>
+
+                                        <button
+                                            @click="$store.app.updateStock(model, qty); stockModalOpen = false; alert('Stock Updated!')"
+                                            class="w-full mt-4 bg-slate-900 text-white py-3 rounded-lg font-bold">
+                                            Save Update
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </template>
+
+                </main>
+            </div>
+        </div>
+    </template>
+
+    <!-- Change Password Modal (Global) -->
+    <div x-data="{ 
+            open: false, 
+            oldPass: '', 
+            newPass: '', 
+            confirmPass: '', 
+            error: '', 
+            success: '',
+            reset() {
+                this.oldPass = '';
+                this.newPass = '';
+                this.confirmPass = '';
+                this.error = '';
+                this.success = '';
+            },
+            handleUpdate() {
+                if(!this.oldPass || !this.newPass || !this.confirmPass) {
+                    this.error = 'All fields are required';
+                    return;
+                }
+                if(this.newPass !== this.confirmPass) {
+                    this.error = 'New passwords do not match';
+                    return;
+                }
+                const res = $store.app.changePassword(this.oldPass, this.newPass);
+                if(res.success) {
+                    this.success = res.message;
+                    setTimeout(() => { this.open = false; this.reset(); }, 2000);
+                } else {
+                    this.error = res.message;
+                }
+            }
+        }" @open-change-password.window="open = true" x-show="open"
+        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" x-cloak>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" @click.outside="open = false">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 class="font-bold text-slate-800">Change Password</h3>
+                <button @click="open = false" class="text-slate-400 hover:text-slate-600"><i
+                        class="ph ph-x text-xl"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div x-show="error"
+                    class="bg-red-50 text-red-600 p-3 rounded-lg text-xs font-medium border border-red-100"
+                    x-text="error"></div>
+                <div x-show="success"
+                    class="bg-green-50 text-green-600 p-3 rounded-lg text-xs font-medium border border-green-100"
+                    x-text="success"></div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Current
+                        Password</label>
+                    <input type="password" x-model="oldPass"
+                        class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">New
+                        Password</label>
+                    <input type="password" x-model="newPass"
+                        class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Confirm New
+                        Password</label>
+                    <input type="password" x-model="confirmPass"
+                        class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition text-sm">
+                </div>
+
+                <button @click="handleUpdate()"
+                    class="w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition shadow-lg shadow-slate-200 mt-2">
+                    Update Password
+                </button>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
